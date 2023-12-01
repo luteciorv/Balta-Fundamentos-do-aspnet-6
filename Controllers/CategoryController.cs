@@ -25,10 +25,17 @@ namespace Blog.Controllers
         [HttpPost]
         public async Task<IActionResult> PostAsync([FromServices] BlogDataContext context, [FromBody] Category model)
         {
-            await context.Categories.AddAsync(model);
-            await context.SaveChangesAsync();
+            try
+            {
+                await context.Categories.AddAsync(model);
+                await context.SaveChangesAsync();
 
-            return Created($"{model.Id}", model);
+                return Created($"{model.Id}", model);
+            }
+            catch(Exception ex)
+            {
+                return StatusCode(500, $"Não foi possível criar a categoria. Exceção: {ex.Message}");
+            }
         }
 
         [HttpPut("{id:int}")]
@@ -43,10 +50,17 @@ namespace Blog.Controllers
             modelToUpdate.Name = model.Name;
             modelToUpdate.Slug = model.Slug;
 
-            context.Categories.Update(modelToUpdate);
-            await context.SaveChangesAsync();
+            try
+            {
+                context.Categories.Update(modelToUpdate);
+                await context.SaveChangesAsync();
 
-            return NoContent();
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Não foi possível atualizar a categoria. Exceção: {ex.Message}");
+            }
         }
 
 
@@ -56,10 +70,17 @@ namespace Blog.Controllers
             var model = await context.Categories.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id);
             if (model is null) return NotFound();
 
-            context.Categories.Remove(model);
-            await context.SaveChangesAsync();
-            
-            return Ok();
+            try
+            {
+                context.Categories.Remove(model);
+                await context.SaveChangesAsync();
+
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Não foi possível remover a categoria. Exceção: {ex.Message}");
+            }
         }
     }
 }
