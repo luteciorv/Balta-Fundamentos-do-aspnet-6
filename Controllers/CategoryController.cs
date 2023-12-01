@@ -1,5 +1,6 @@
 ﻿using Blog.Data;
 using Blog.Models;
+using Blog.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,14 +24,21 @@ namespace Blog.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> PostAsync([FromServices] BlogDataContext context, [FromBody] Category model)
+        public async Task<IActionResult> PostAsync([FromServices] BlogDataContext context, [FromBody] EditorCategoryViewModel viewModel)
         {
             try
             {
-                await context.Categories.AddAsync(model);
+                var category = new Category
+                {
+                    Id = 0,
+                    Name = viewModel.Name,
+                    Slug = viewModel.Slug.ToLower()
+                };
+
+                await context.Categories.AddAsync(category);
                 await context.SaveChangesAsync();
 
-                return Created($"{model.Id}", model);
+                return Created($"{category.Id}", category);
             }
             catch(Exception ex)
             {
@@ -42,17 +50,17 @@ namespace Blog.Controllers
         public async Task<IActionResult> PutAsync(
             [FromServices] BlogDataContext context,
             [FromRoute] int id,
-            [FromBody] Category model)
+            [FromBody] EditorCategoryViewModel viewModel)
         {
-            var modelToUpdate = await context.Categories.FirstOrDefaultAsync(c => c.Id == id);
-            if (modelToUpdate is null) return NotFound();
+            var model = await context.Categories.FirstOrDefaultAsync(c => c.Id == id);
+            if (model is null) return NotFound();
 
-            modelToUpdate.Name = model.Name;
-            modelToUpdate.Slug = model.Slug;
+            model.Name = viewModel.Name;
+            model.Slug = viewModel.Slug.ToLower();
 
             try
             {
-                context.Categories.Update(modelToUpdate);
+                context.Categories.Update(model);
                 await context.SaveChangesAsync();
 
                 return NoContent();
