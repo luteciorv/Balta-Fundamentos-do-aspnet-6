@@ -26,21 +26,23 @@ namespace Blog.Controllers
         [HttpPost]
         public async Task<IActionResult> PostAsync([FromServices] BlogDataContext context, [FromBody] EditorCategoryViewModel viewModel)
         {
+            if (!ModelState.IsValid) return BadRequest();
+
+            var category = new Category
+            {
+                Id = 0,
+                Name = viewModel.Name,
+                Slug = viewModel.Slug.ToLower()
+            };
+
             try
             {
-                var category = new Category
-                {
-                    Id = 0,
-                    Name = viewModel.Name,
-                    Slug = viewModel.Slug.ToLower()
-                };
-
                 await context.Categories.AddAsync(category);
                 await context.SaveChangesAsync();
 
                 return Created($"{category.Id}", category);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return StatusCode(500, $"Não foi possível criar a categoria. Exceção: {ex.Message}");
             }
@@ -52,6 +54,8 @@ namespace Blog.Controllers
             [FromRoute] int id,
             [FromBody] EditorCategoryViewModel viewModel)
         {
+            if (!ModelState.IsValid) return BadRequest();
+
             var model = await context.Categories.FirstOrDefaultAsync(c => c.Id == id);
             if (model is null) return NotFound();
 
