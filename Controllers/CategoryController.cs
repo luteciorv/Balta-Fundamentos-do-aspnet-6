@@ -12,15 +12,32 @@ namespace Blog.Controllers
     {
         [HttpGet]
         public async Task<IActionResult> GetAsync([FromServices] BlogDataContext context)
-            => Ok(await context.Categories.AsNoTracking().ToListAsync());
+        {
+            try
+            {
+                var categories = await context.Categories.AsNoTracking().ToListAsync();
+                return Ok(new ResultViewModel<IEnumerable<Category>>(categories));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ResultViewModel<Category>($"Não foi possível recuperar as categorias. Erro: {ex.Message}"));
+            }
+        }
 
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetAsync([FromServices] BlogDataContext context, [FromRoute] int id)
         {
-            var category = await context.Categories.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id);
-            if (category is null) return NotFound();
+            try
+            {
+                var category = await context.Categories.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id);
+                if (category is null) return NotFound();
 
-            return Ok(category);
+                return Ok(new ResultViewModel<Category>(category));
+            }
+            catch(Exception ex)
+            {
+                return StatusCode(500, new ResultViewModel<Category>($"Não foi possível recuperar a categoria de id {id}. Erro: {ex.Message}"));
+            }
         }
 
         [HttpPost]
@@ -44,7 +61,7 @@ namespace Blog.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Não foi possível criar a categoria. Exceção: {ex.Message}");
+                return StatusCode(500, new ResultViewModel<Category>($"Não foi possível criar a categoria. Erro: {ex.Message}"));
             }
         }
 
@@ -71,7 +88,7 @@ namespace Blog.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Não foi possível atualizar a categoria. Exceção: {ex.Message}");
+                return StatusCode(500, new ResultViewModel<Category>($"Não foi possível atualizar a categoria de id {id}. Erro: {ex.Message}"));
             }
         }
 
@@ -91,7 +108,7 @@ namespace Blog.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Não foi possível remover a categoria. Exceção: {ex.Message}");
+                return StatusCode(500, new ResultViewModel<Category>($"Não foi possível apagar a categoria de id {id}. Erro: {ex.Message}"));
             }
         }
     }
