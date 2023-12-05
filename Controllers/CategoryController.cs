@@ -1,4 +1,5 @@
 ﻿using Blog.Data;
+using Blog.Extensions;
 using Blog.Models;
 using Blog.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -30,7 +31,7 @@ namespace Blog.Controllers
             try
             {
                 var category = await context.Categories.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id);
-                if (category is null) return NotFound();
+                if (category is null) return NotFound(new ResultViewModel<Category>($"A categoria de id {id} não foi encontrada."));
 
                 return Ok(new ResultViewModel<Category>(category));
             }
@@ -43,7 +44,7 @@ namespace Blog.Controllers
         [HttpPost]
         public async Task<IActionResult> PostAsync([FromServices] BlogDataContext context, [FromBody] EditorCategoryViewModel viewModel)
         {
-            if (!ModelState.IsValid) return BadRequest();
+            if (!ModelState.IsValid) return BadRequest(new ResultViewModel<Category>(ModelState.GetErrors()));
 
             var category = new Category
             {
@@ -57,7 +58,7 @@ namespace Blog.Controllers
                 await context.Categories.AddAsync(category);
                 await context.SaveChangesAsync();
 
-                return Created($"{category.Id}", category);
+                return Created($"{category.Id}", new ResultViewModel<Category>(category));
             }
             catch (Exception ex)
             {
@@ -71,7 +72,7 @@ namespace Blog.Controllers
             [FromRoute] int id,
             [FromBody] EditorCategoryViewModel viewModel)
         {
-            if (!ModelState.IsValid) return BadRequest();
+            if (!ModelState.IsValid) return BadRequest(new ResultViewModel<Category>(ModelState.GetErrors()));
 
             var model = await context.Categories.FirstOrDefaultAsync(c => c.Id == id);
             if (model is null) return NotFound();
