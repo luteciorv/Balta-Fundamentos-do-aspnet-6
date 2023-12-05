@@ -24,7 +24,6 @@ public class UserMap : IEntityTypeConfiguration<User>
         builder.Property(u => u.Email);
         builder.Property(u => u.Image);
         builder.Property(u => u.PasswordHash);
-        builder.Property(u => u.Github);
 
         builder.Property(u => u.Slug)
            .IsRequired()

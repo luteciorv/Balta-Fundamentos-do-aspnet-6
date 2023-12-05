@@ -1,9 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using System.ComponentModel.DataAnnotations;
+﻿namespace Blog.Models;
 
-namespace Blog.Models;
-
-[Table("Post")]
 public class Post
 {
     public int Id { get; set; }
@@ -16,5 +12,6 @@ public class Post
 
     public Category Category { get; set; }
     public User Author { get; set; }
-    public IList<Tag> Tags { get; set; }
+
+    public List<Tag> Tags { get; set; }
 }
