@@ -5,6 +5,7 @@ using Blog.Services;
 using Blog.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SecureIdentity.Password;
 
 namespace Blog.Controllers;
@@ -49,10 +50,33 @@ public class AccountController : ControllerBase
     }
 
     [HttpPost("login")]
-    public IActionResult Login([FromServices] TokenService tokenService)
+    public async Task<IActionResult> LoginAsync(
+        [FromServices] TokenService tokenService,
+        [FromServices] BlogDataContext context,
+        [FromBody] LoginViewModel viewModel)
     {
-        var token = tokenService.GenerateToken(null);
-        return Ok(token);
+        if (!ModelState.IsValid)
+            return BadRequest(new ResultViewModel<string>(ModelState.GetErrors()));
+
+        var user = await context.Users
+                            .AsNoTracking()
+                            .Include(u => u.Roles)
+                            .FirstOrDefaultAsync(u => u.Email == viewModel.Email);
+        if (user is null)
+            return StatusCode(404, new ResultViewModel<string>($"Usuário ou senha inválido"));
+
+        if(!PasswordHasher.Verify(user.PasswordHash, viewModel.Password))
+            return StatusCode(404, new ResultViewModel<string>($"Usuário ou senha inválido"));
+
+        try
+        {
+            var token = tokenService.GenerateToken(user); 
+            return Ok(new ResultViewModel<string>(token));
+        }
+        catch(Exception ex)
+        {
+            return StatusCode(500, $"Não foi possível logar o usuário. Erro: {ex.Message}");
+        }
     }
 
     [Authorize(Roles = "user")]
