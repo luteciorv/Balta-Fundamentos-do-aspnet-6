@@ -20,10 +20,21 @@ public class UserMap : IEntityTypeConfiguration<User>
             .HasColumnType("NVARCHAR")
             .HasMaxLength(80);
 
-        builder.Property(u => u.Bio);
-        builder.Property(u => u.Email);
-        builder.Property(u => u.Image);
-        builder.Property(u => u.PasswordHash);
+        builder.Property(u => u.Bio)
+            .IsRequired(false);
+
+        builder.Property(u => u.Email)
+            .IsRequired()
+            .HasColumnType("VARCHAR")
+            .HasMaxLength(160);
+
+        builder.Property(u => u.Image)
+            .IsRequired(false);
+
+        builder.Property(u => u.PasswordHash)
+            .IsRequired()
+            .HasColumnType("VARCHAR")
+            .HasMaxLength(255);
 
         builder.Property(u => u.Slug)
            .IsRequired()
