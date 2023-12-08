@@ -3,10 +3,12 @@ using Blog.Extensions;
 using Blog.Models;
 using Blog.Services;
 using Blog.ViewModels;
+using Blog.ViewModels.Accounts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SecureIdentity.Password;
+using System.Text.RegularExpressions;
 
 namespace Blog.Controllers;
 
@@ -101,4 +103,42 @@ public class AccountController : ControllerBase
     [HttpGet("admin")]
     public IActionResult GetAdmin()
         => Ok(User.Identity?.Name);
+
+    [Authorize]
+    [HttpPost("upload-image")]
+    public async Task<IActionResult> UploadImage(
+        [FromServices] BlogDataContext context,
+        [FromBody] UploadImageViewModel viewModel)
+    {
+        var fileName = $"{Guid.NewGuid()}.jpg";
+        var data = new Regex(@"data:image\/[a-z]+;base64,").Replace(viewModel.Base64Image, "");
+        var bytes = Convert.FromBase64String(data);
+
+        try
+        {
+            await System.IO.File.WriteAllBytesAsync($"wwwroot/images/{fileName}", bytes);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ResultViewModel<string>($"Não foi possível salvar o arquivo de imagem no disco. Erro: {ex.Message}"));
+        }
+
+        var user = await context.Users.FirstOrDefaultAsync(u => u.Email == User.Identity!.Name);
+        if (user is null)
+            return NotFound(new ResultViewModel<User>($"O usuário com o e-mail {User.Identity!.Name} não foi encontrado"));
+
+        user.Image = $"https://localhost:7231/images/{fileName}";
+
+        try
+        {
+            context.Users.Update(user);
+            await context.SaveChangesAsync();
+        }
+        catch(Exception ex)
+        {
+            return StatusCode(500, new ResultViewModel<string>($"Ocorreu um erro ao atualizar a imagem do usuário. Erro: {ex.Message}"));
+        }
+
+        return Ok(new ResultViewModel<string>("A imagem foi alterada com sucesso"));
+    }
 }
