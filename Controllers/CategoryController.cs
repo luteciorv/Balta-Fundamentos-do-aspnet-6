@@ -5,6 +5,7 @@ using Blog.ViewModels;
 using Blog.ViewModels.Categories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Blog.Controllers
 {
@@ -13,21 +14,30 @@ namespace Blog.Controllers
     public class CategoryController : ControllerBase
     {
         [HttpGet]
-        public async Task<IActionResult> GetAsync([FromServices] BlogDataContext context)
+        public async Task<IActionResult> GetAsync(
+            [FromServices] BlogDataContext context,
+            [FromServices] IMemoryCache cache)
         {
             try
             {
-                var categories = await context.Categories.AsNoTracking().ToListAsync();
-                return Ok(new ResultViewModel<IEnumerable<Category>>(categories));
+                var categories = await cache.GetOrCreateAsync("CategoriesCache", async entry =>
+                {
+                    entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
+                    return await context.Categories.AsNoTracking().ToListAsync();
+                });
+
+                return Ok(new ResultViewModel<IEnumerable<Category>?>(categories));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ResultViewModel<Category>($"Não foi possível recuperar as categorias. Erro: {ex.Message}"));
+                return StatusCode(500, new ResultViewModel<IEnumerable<Category>>($"Não foi possível recuperar as categorias. Erro: {ex.Message}"));
             }
         }
 
         [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetAsync([FromServices] BlogDataContext context, [FromRoute] int id)
+        public async Task<IActionResult> GetAsync(
+            [FromServices] BlogDataContext context, 
+            [FromRoute] int id)
         {
             try
             {
